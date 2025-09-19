@@ -29,33 +29,50 @@ public class Philosopher extends Thread {
     }
 
     @Override
-    public void run() {
-        while (running) {
-            try {
-                think();
-                // Aléatoirement prendre la baguette de gauche puis de droite ou l'inverse
-                switch(new Random().nextInt(2)) {
-                    case 0:
-                        myLeftStick.take();
-                        think(); // pour augmenter la probabilité d'interblocage
-                        myRightStick.take();
-                        break;
-                    case 1:
-                        myRightStick.take();
-                        think(); // pour augmenter la probabilité d'interblocage
-                        myLeftStick.take();
-                }
-                // Si on arrive ici, on a pu "take" les 2 baguettes
+public void run() {
+    while (running) {
+        try {
+            think();
+            boolean hasLeft = false;
+            boolean hasRight = false;
+
+            switch(new Random().nextInt(2)) {
+                case 0:
+                    hasLeft = myLeftStick.take(500); // attend 500 ms
+                    if (hasLeft) {
+                        think(); // attend un peu (augmente risque de blocage)
+                        hasRight = myRightStick.take(500);
+                        if (!hasRight) {
+                            myLeftStick.release();
+                        }
+                    }
+                    break;
+                case 1:
+                    hasRight = myRightStick.take(500);
+                    if (hasRight) {
+                        think();
+                        hasLeft = myLeftStick.take(500);
+                        if (!hasLeft) {
+                            myRightStick.release();
+                        }
+                    }
+                    break;
+            }
+
+            if (hasLeft && hasRight) {
                 eat();
-                // On libère les baguettes :
                 myLeftStick.release();
                 myRightStick.release();
-                // try again
-            } catch (InterruptedException ex) {
-                Logger.getLogger("Table").log(Level.SEVERE, "{0} Interrupted", this.getName());
+            } else {
+                System.out.println("M."+this.getName()+" n'a pas pu prendre les deux baguettes. Il réessaiera plus tard.");
             }
+
+        } catch (InterruptedException ex) {
+            Logger.getLogger("Table").log(Level.SEVERE, "{0} Interrupted", this.getName());
         }
     }
+}
+
 
     // Permet d'interrompre le philosophe "proprement" :
     // Il relachera ses baguettes avant de s'arrêter
