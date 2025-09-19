@@ -16,7 +16,6 @@ public class ChopStick {
             wait(timeoutMillis);
             timeoutMillis = endTime - System.currentTimeMillis();
         }
-
         if (iAmFree) {
             iAmFree = false;
             System.out.println("baguette " + myNumber + " prise");
